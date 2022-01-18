@@ -12,7 +12,8 @@ theme_code_list = ['141', '140','571','570','830','501','562','561','560','572',
 det_a = [0,0,0,0,0,0,0,0,0,0,0,0]
 det_b = [0,0,0,0,0,0,0,0,0,0,0,0]
 print_sql_part = "종목코드 , 종목명, 연중최고, 연중최저, 시가총액, PER, EPS, ROE, PBR, EV, BPS, 매출액, 영업이익, 당기순이익, 현재가, Theme, Dividends, Dividends_Rate"
-
+now = datetime.datetime.now()
+today = now.strftime("%Y%m%d")
 
 # 프로그램 시작
 print("=" * 70)
@@ -54,8 +55,8 @@ if data_load_check == 'Y':
                     out_name = f"{code}.csv"
                     df.to_csv(out_name)
                     time.sleep(3.6)
-                    if i == 10:
-                        break;
+                    # if i == 10:
+                    #     break;
                 print("\nData Download End")
 
                 #끝나면 DB(daily_stock)로 저장
@@ -78,7 +79,7 @@ if data_load_check == 'Y':
                             stores_info = stores_info.fillna(0)
                             print(file_name)
                             for index, row in stores_info.iterrows():
-                                tu = ( index, str(row.종목코드), row.종목명, row.연중최고, row.연중최저, row.시가총액, row.PER, row.EPS, row.ROE, row.PBR, row.EV, row.BPS, row.매출액, row.영업이익, row.당기순이익, row.시가, row.고가, row.저가, row.현재가, row.전일대비, row.등락율, row.거래량) 
+                                tu = ( index, str(row.종목코드), row.종목명, abs(row.연중최고), abs(row.연중최저), row.시가총액, row.PER, row.EPS, row.ROE, row.PBR, row.EV, row.BPS, row.매출액, row.영업이익, row.당기순이익, abs(row.시가), abs(row.고가), abs(row.저가), abs(row.현재가), row.전일대비, row.등락율, row.거래량) 
                                 curs.execute("INSERT IGNORE INTO date_" + today + "(count, 종목코드, 종목명, 연중최고, 연중최저, 시가총액, PER, EPS, ROE, PBR, EV, BPS, 매출액, 영업이익, 당기순이익, 시가, 고가, 저가, 현재가, 전일대비, 등락율, 거래량) values(%s, %s, %s,%s, %s, %s,%s, %s, %s,%s, %s, %s,%s, %s, %s,%s, %s, %s,%s, %s, %s, %s)", tu)
                 print("\nDB Upload Completed.")
 
@@ -142,7 +143,7 @@ if data_load_check == 'Y':
                             stores_info = stores_info.fillna(0)
                             print(file_name)
                             for index, row in stores_info.iterrows():
-                                tu = (row.일자, row.현재가, row.거래량, row.거래대금, row.시가, row.고가, row.저가)
+                                tu = (row.일자, abs(row.현재가), row.거래량, row.거래대금, abs(row.시가), abs(row.고가), abs(row.저가))
                                 curs.execute("INSERT IGNORE INTO " + today + "_" + file_name + "(일자, 현재가, 거래량, 거래대금, 시가, 고가, 저가) values (%s,%s,%s,%s,%s,%s,%s)", tu)
                 print("\nDB Upload Completed.")
                 conn.commit()
@@ -423,7 +424,6 @@ while True:
         count = temp
         # 정렬 방식(시가총액, 매출액, 영업이익, 배당금, 배당수익률)
         sort_check = input("Would you like to sort out the data? (Y for yes) : ")
-        sort_sql = ""
         if sort_check == 'Y':
             print("\n1. 시가총액\t2. 매출액\t3. 영업이익\t4. 배당금\t5. 배당수익률\n")
             sorting_type = input("By what criteria would you like to sort it out? (1 to 5) : ")
@@ -438,13 +438,18 @@ while True:
             elif sorting_type == '5':
                 sort_sql = "ORDER BY Dividends_Rate DESC"
         else:
-            print("\nAnalyzing these stocks...")
-            break;
+            analyze = input("\nDo you want to start analyzing these stocks? (Y for Yes) : ")
+            if analyze == "Y":
+                print("\nAnalyzing these stocks...\n")
+                break;
+            else:
+                continue;
+            
 
     # sql에서 종목코드만 추출
     code_list = []
-    filter_sql = sql % "종목코드" + sort_sql 
-    #print(filter_sql)
+    filter_sql = sql % "종목코드, 종목명" + sort_sql 
+    # print(filter_sql)
     curs.execute(filter_sql)
     results = curs.fetchall()
     temp = count
@@ -457,6 +462,7 @@ while True:
         print(index, value)
     count = temp
     # code list 추출 완료
+    print("\n")
     print(code_list)
 
     # DB 닫기
