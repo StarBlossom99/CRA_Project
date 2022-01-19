@@ -13,8 +13,8 @@ det_a = [0,0,0,0,0,0,0,0,0,0,0,0]
 det_b = [0,0,0,0,0,0,0,0,0,0,0,0]
 print_sql_part = "종목코드 , 종목명, 연중최고, 연중최저, 시가총액, PER, EPS, ROE, PBR, EV, BPS, 매출액, 영업이익, 당기순이익, 현재가, Theme, Dividends, Dividends_Rate"
 now = datetime.datetime.now()
-today = now.strftime("%Y%m%d")
-
+# today = now.strftime("%Y%m%d")
+today = "20220118"
 # 프로그램 시작
 print("=" * 70)
 print("Welcome to StocKid Program")
@@ -121,8 +121,8 @@ if data_load_check == 'Y':
                     out_name = f"{code}.csv"
                     df.to_csv(out_name)
                     time.sleep(3.6)
-                    if i == 10:
-                        break;
+                    # if i == 10:
+                    #     break;
                 print("\nData Download End")
                 #끝나면 DB(stock_price)로 저장
                 #mysql 연결
