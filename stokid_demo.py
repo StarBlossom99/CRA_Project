@@ -4,6 +4,7 @@ import pymysql
 import os
 import datetime
 import time
+import price_chart
 from pykiwoom.kiwoom import *
 
 theme_code_list = ['141', '140','571','570','830','501','562','561','560','572','600','500','458','452','353','250','170','202','319','201','200','471','470','312','270','245','160','210','211','480','610','316','213','456','517','281','280','130','360','363','361','362','550','551','557','556',
@@ -55,8 +56,8 @@ if data_load_check == 'Y':
                     out_name = f"{code}.csv"
                     df.to_csv(out_name)
                     time.sleep(3.6)
-                    # if i == 10:
-                    #     break;
+                    if i == 7:
+                        break;
                 print("\nData Download End")
 
                 #끝나면 DB(daily_stock)로 저장
@@ -448,6 +449,7 @@ while True:
 
     # sql에서 종목코드만 추출
     code_list = []
+    name_list = []
     filter_sql = sql % "종목코드, 종목명" + sort_sql 
     # print(filter_sql)
     curs.execute(filter_sql)
@@ -459,16 +461,30 @@ while True:
             break;
         code_temp = str(value)
         code_list.append(code_temp[10:16])
+        name_list.append(code_temp[27:-2])
         print(index, value)
     count = temp
-    # code list 추출 완료
-    print("\n")
-    print(code_list)
+    # code list, name 추출 완료
 
     # DB 닫기
     conn.commit()
     conn.close()
+
+    print("\n")
+    print(code_list)
+    print(name_list)
+
+    # code list to chart// Chart 생성 함수 클래스로 구현 완료
+    for index, code in enumerate(code_list, start= 1):
+        today = "20220119"
+        inst = price_chart.graph()
+        inst.setdata(code, today, name_list[index-1])
+        inst.make_graph()
+
     break;
 
 print("program ends")
+
+# GUI? Class 분리, 날짜 문제 해결(장 종료 후에 6시간 동안 돌려서 그 다음날 이용 가능하도록?)
+
 
