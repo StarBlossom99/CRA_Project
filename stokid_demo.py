@@ -5,14 +5,18 @@ import os
 import datetime
 import time
 import price_chart
+import DataLoad
+import DetailFilter
+import MySql_Filter
 from pykiwoom.kiwoom import *
 
 theme_code_list = ['141', '140','571','570','830','501','562','561','560','572','600','500','458','452','353','250','170','202','319','201','200','471','470','312','270','245','160','210','211','480','610','316','213','456','517','281','280','130','360','363','361','362','550','551','557','556',
 '555','552','554','553','212','313','290','453','420','421','611','171','315','530','459','310','364','810','515','516','203','318','370','286','820','154','261','800','214','232','230','231','110','111','314','311','400','351','352','350','256','255','242','241','240','243','215','262',
 '454','455','450','317','180','181','223','220','222','221','300','910','430','410','260','284','282','283','285','451','920','900','457','244','153','520','103','102','101','100','481','850','121','172','152','151','150','291','120','330','840','511','518','510','514','513','512','173']
-det_a = [0,0,0,0,0,0,0,0,0,0,0,0]
-det_b = [0,0,0,0,0,0,0,0,0,0,0,0]
+
 print_sql_part = "종목코드 , 종목명, 연중최고, 연중최저, 시가총액, PER, EPS, ROE, PBR, EV, BPS, 매출액, 영업이익, 당기순이익, 현재가, Theme, Dividends, Dividends_Rate"
+
+
 now = datetime.datetime.now()
 # today = now.strftime("%Y%m%d")
 today = "20220118"
@@ -25,132 +29,17 @@ data_load_check = input("Do you want to load new data? (Y for Yes) : ")
 if data_load_check == 'Y':
     now = datetime.datetime.now()
     today = now.strftime("%Y%m%d")
-    #날짜 이용, 데이터 불러올것인지 조사
-    data_load = input("\nDo you want to load the data of %s? (Y for Yes) : " % today)
-    #불러오기
-    if data_load == "Y":
-        #키움 로그인
-        kiwoom = Kiwoom()
-        kiwoom.CommConnect()
+    # Data 다운끝나면 프로그램 종료할지
+    exit_check = input("End the program after downloading? (Y for Yes) : ")
+    data = DataLoad.dataload()
+    data.setdata()
+    data.settoday("20220128")
+    data.download()
+    if exit_check == "Y":
+        exit()
 
-        kospi = kiwoom.GetCodeListByMarket('0')
-        kosdaq = kiwoom.GetCodeListByMarket('10')
-        codes = kospi + kosdaq
-        print("\nYou have been logged in to the Kiwoom server.")
-        #어떤 데이터 불러올것인지 조사
-        print("\n1. Today(%s)'s Entire Stock Information 2. Entire Stock Price Information for 600 days" % today)
-        which_data = input("\nWhat data do you want to get? ( 1 or 2 ) : ")
-        #오늘 날짜의 전체 주식 정보
-        if which_data == "1":
-            #경고 메세지 (3시간 걸림)
-            load_check = input("\nCaution) This takes about three hours. Will you still do it? ( Y for Yes) : ")
-            #수행
-            if load_check == "Y":
-                #폴더 만들기
-                os.mkdir("C:\CRAproject/entire_%s" % today)
-                os.chdir("C:\CRAproject/entire_%s" % today)
-                #해당 폴더에 csv파일 생성
-                for i, code in enumerate(codes):
-                    print(f"{i}/{len(codes)} {code}")
-                    df = kiwoom.block_request("opt10001", 종목코드=code, output="주식기본정보", next=0)
-                    out_name = f"{code}.csv"
-                    df.to_csv(out_name)
-                    time.sleep(3.6)
-                    if i == 7:
-                        break;
-                print("\nData Download End")
 
-                #끝나면 DB(daily_stock)로 저장
-                #mysql 연결
-                conn = pymysql.connect(host="localhost", user = 'root', password='Axenon!0927', db = 'daily_stock', charset = 'utf8') 
-                curs = conn.cursor(pymysql.cursors.DictCursor)
-                dir_path = "C:\CRAproject/entire_%s" % today
-
-                create_sql = "CREATE TABLE date_%s(count int primary key auto_increment, 종목코드 varchar(10) null, 종목명 varchar(40) null, 연중최고 int null, 연중최저 int null, 시가총액 int null, PER float null, EPS float null, PBR float null, ROE float null, EV float null, BPS float null, 매출액 int null, 영업이익 int null, 당기순이익 int null, 시가 int null, 고가 int null, 저가 int null, 현재가 int null, 전일대비 int null, 등락율 float null, 거래량 int null, Theme int null default 0, Dividends float null default 0, Dividends_Rate float null default 0)" % today
-                curs.execute(create_sql)
-
-                #DB저장 과정
-                for (root, directories, files) in os.walk(dir_path):
-                    for file in files:
-                        if '.csv' in file:
-                            file_path = os.path.join(root, file)
-                            file_name = file_path[-10:-4]
-                            
-                            stores_info = pd.read_csv(file_path, encoding="utf8", sep=",", dtype={'종목코드' : str})
-                            stores_info = stores_info.fillna(0)
-                            print(file_name)
-                            for index, row in stores_info.iterrows():
-                                tu = ( index, str(row.종목코드), row.종목명, abs(row.연중최고), abs(row.연중최저), row.시가총액, row.PER, row.EPS, row.ROE, row.PBR, row.EV, row.BPS, row.매출액, row.영업이익, row.당기순이익, abs(row.시가), abs(row.고가), abs(row.저가), abs(row.현재가), row.전일대비, row.등락율, row.거래량) 
-                                curs.execute("INSERT IGNORE INTO date_" + today + "(count, 종목코드, 종목명, 연중최고, 연중최저, 시가총액, PER, EPS, ROE, PBR, EV, BPS, 매출액, 영업이익, 당기순이익, 시가, 고가, 저가, 현재가, 전일대비, 등락율, 거래량) values(%s, %s, %s,%s, %s, %s,%s, %s, %s,%s, %s, %s,%s, %s, %s,%s, %s, %s,%s, %s, %s, %s)", tu)
-                print("\nDB Upload Completed.")
-
-                #테마 넣기
-                for theme in theme_code_list:
-                    items = kiwoom.GetThemeGroupCode(theme)
-                    for item in items:
-                        tu = (int(theme), item)
-                        sql = "UPDATE date_" + today + " SET Theme = " + theme + " WHERE 종목코드 = '" + item + "'"
-                        curs.execute(sql)
-                print("\nTheme info added.")
-
-                #배당금 정보 넣기
-                #배당수익률 정보 넣기
-                dividends = pd.read_csv("C:\CRAproject/Dividends.csv", encoding="utf8", sep=",", dtype={'종목코드' : str ,'주당배당금' : str})
-                dividends = dividends.fillna(0)
-                for index, row in dividends.iterrows():
-                    tu = (row.주당배당금,row.종목코드)
-                    sql = "UPDATE date_" + today + " SET Dividends = %s WHERE 종목코드 = '%s'" % tu
-                    curs.execute(sql)
-                    sql = "UPDATE date_" + today + " SET Dividends_Rate = %s/현재가 WHERE 종목코드 ='%s'" % tu
-                    curs.execute(sql)
-                print("\nDividends info added.")
-                conn.commit()
-                conn.close()
-
-        elif which_data == "2":
-            #경고 메세지 (3시간 걸림)
-            load_check = input("\nCaution) This takes about three hours. Will you still do it? ( Y for Yes) : ")
-            #수행
-            if load_check == "Y":
-                #폴더 만들기
-                os.mkdir("C:\CRAproject/today_%s" % today)
-                os.chdir("C:\CRAproject/today_%s" % today)
-                #해당 폴더에 csv파일 생성
-                for i, code in enumerate(codes):
-                    print(f"{i}/{len(codes)} {code}")
-                    df = kiwoom.block_request("opt10081", 종목코드=code, 기준일자=today, 수정주가구분=1, output="주식일봉차트조회", next=0)
-                    out_name = f"{code}.csv"
-                    df.to_csv(out_name)
-                    time.sleep(3.6)
-                    # if i == 10:
-                    #     break;
-                print("\nData Download End")
-                #끝나면 DB(stock_price)로 저장
-                #mysql 연결
-                conn = pymysql.connect(host="localhost", user = 'root', password='Axenon!0927', db = 'stock_price',charset = 'utf8') 
-                curs = conn.cursor(pymysql.cursors.DictCursor)
-                dir_path = "C:\CRAproject/today_%s" % today
-
-                #DB저장 과정
-                for (root, directories, files) in os.walk(dir_path):
-                    for file in files:
-                        if '.csv' in file:
-                            file_path = os.path.join(root, file)
-                            file_name = file_path[-10:-4]
-                            create_sql = "CREATE TABLE %s_%s(일자 date not null primary key, 현재가 int null, 거래량 int null, 거래대금 int null, 시가 int null, 고가 int null, 저가 int null)" % (today, file_name)
-                            curs.execute(create_sql)
-
-                            stores_info = pd.read_csv(file_path, encoding="utf8", sep=",")
-                            stores_info = stores_info.fillna(0)
-                            print(file_name)
-                            for index, row in stores_info.iterrows():
-                                tu = (row.일자, abs(row.현재가), row.거래량, row.거래대금, abs(row.시가), abs(row.고가), abs(row.저가))
-                                curs.execute("INSERT IGNORE INTO " + today + "_" + file_name + "(일자, 현재가, 거래량, 거래대금, 시가, 고가, 저가) values (%s,%s,%s,%s,%s,%s,%s)", tu)
-                print("\nDB Upload Completed.")
-                conn.commit()
-                conn.close()
-                    
-#DB table csv 파일로 빼는 part
+# #DB table csv 파일로 빼는 part
 
 while True:
     # 투자 기간 입력
@@ -185,290 +74,168 @@ while True:
             print("\nplease input valid input (1 to 15)")
             continue;
     
-    # 세부 필터를 사용할 것인지 묻기
-    detail_filter = input("\nDo you want to use detail filter? (Y for yes , N for anything else) : ")
-    if detail_filter == 'Y':
-        print("\nDetailed filter is used.\n")
-        #세부 필터 입력 받기
-        while True:
-            #필터 코드 입력 받기
-            detail_code = 0
-            while True:
-                print("%-15s\t%-15s\t%-15s\t%-15s\n%-15s\t%-15s\t%-15s\t%-15s\n%-15s\t%-15s\t%-15s\t%-15s\n" % ("1. Market Cap(시가 총액)", "2. PER(주가수익률)", "3. EPS(주당 순이익)", "4. ROE(자기자본 이익률)" , "5, PBR(주가 순 자산비율)", "6. EV(기업 가치)", "7. BPS(주당 순 자산가치)", "8. Sales(매출액)", "9. Operating Profit(영업 이익)", "10. Net Profit(당기 순이익)", "11. Dividends(배당금)", "12. Dividend Yield(배당 수익률)"))
-                detail_code = input("\nPlease enter the number of the filter you want to use (1 to 12) : ")
-                # 필터 코드 검사
-                if int(detail_code) >= 1 and int(detail_code) <= 12:
-                    break;
-                else:
-                    print("please input valid detail code (1 to 12)")
-                    continue;
+    det = DetailFilter.filter()
 
-            detail_code = int(detail_code)       
-            # 필터 코드 switch loop
-            if detail_code == 1:
-                while True:
-                    print("\nPlease enter the Market Cap(시가 총액) range. (unit : 100 million won)")
-                    det_a[0] = input("\nPlease enter the minimum value : ")
-                    det_b[0] = input("\nPlease enter the maximum value : ")
-                    if int(det_a[0]) >= int(det_b[0]):
-                        print("maximun value is less than minimum value, please enter valid input")
-                        continue;
-                    else:
-                        break;
-            elif detail_code == 2:
-                while True:
-                    print("\nPlease enter the PER(주가수익률) range.")
-                    det_a[1] = input("\nPlease enter the minimum value : ")
-                    det_b[1] = input("\nPlease enter the maximum value : ")
-                    if int(det_a[1]) >= int(det_b[1]):
-                        print("maximun value is less than minimum value, please enter valid input")
-                        continue;
-                    else:
-                        break;
-            elif detail_code == 3:
-                while True:
-                    print("\nPlease enter the EPS(주당 순이익) range. (unit : won)")
-                    det_a[2] = input("\nPlease enter the minimum value : ")
-                    det_b[2] = input("\nPlease enter the maximum value : ")
-                    if int(det_a[2]) >= int(det_b[2]):
-                        print("maximun value is less than minimum value, please enter valid input")
-                        continue;
-                    else:
-                        break;
-            elif detail_code == 4:
-                while True:
-                    print("\nPlease enter the ROE(자기자본 이익률) range. ")
-                    det_a[3] = input("\nPlease enter the minimum value : ")
-                    det_b[3] = input("\nPlease enter the maximum value : ")
-                    if int(det_a[3]) >= int(det_b[3]):
-                        print("maximun value is less than minimum value, please enter valid input")
-                        continue;
-                    else:
-                        break;
-            elif detail_code == 5:
-                while True:
-                    print("\nPlease enter the PBR(주가 순 자산비율) range.")
-                    det_a[4] = input("\nPlease enter the minimum value : ")
-                    det_b[4] = input("\nPlease enter the maximum value : ")
-                    if int(det_a[0]) >= int(det_b[4]):
-                        print("maximun value is less than minimum value, please enter valid input")
-                        continue;
-                    else:
-                        break;
-            elif detail_code == 6:
-                while True:
-                    print("\nPlease enter the EV(기업 가치) range.")
-                    det_a[5] = input("\nPlease enter the minimum value : ")
-                    det_b[5] = input("\nPlease enter the maximum value : ")
-                    if int(det_a[5]) >= int(det_b[5]):
-                        print("maximun value is less than minimum value, please enter valid input")
-                        continue;
-                    else:
-                        break;
-            elif detail_code == 7:
-                while True:
-                    print("\nPlease enter the BPS(주당 순 자산가치) range.")
-                    det_a[6] = input("\nPlease enter the minimum value : ")
-                    det_b[6] = input("\nPlease enter the maximum value : ")
-                    if int(det_a[6]) >= int(det_b[6]):
-                        print("maximun value is less than minimum value, please enter valid input")
-                        continue;
-                    else:
-                        break;
-            elif detail_code == 8:
-                while True:
-                    print("\nPlease enter the Sales(매출액) range. (unit : 100 million won)")
-                    det_a[7] = input("\nPlease enter the minimum value : ")
-                    det_b[7] = input("\nPlease enter the maximum value : ")
-                    if int(det_a[7]) >= int(det_b[7]):
-                        print("maximun value is less than minimum value, please enter valid input")
-                        continue;
-                    else:
-                        break;
-            elif detail_code == 9:
-                while True:
-                    print("\nPlease enter the Operating Profit(영업 이익) range. (unit : 100 million won)")
-                    det_a[8] = input("\nPlease enter the minimum value : ")
-                    det_b[8] = input("\nPlease enter the maximum value : ")
-                    if int(det_a[8]) >= int(det_b[8]):
-                        print("maximun value is less than minimum value, please enter valid input")
-                        continue;
-                    else:
-                        break;
-            elif detail_code == 10:
-                while True:
-                    print("\nPlease enter Net Profit(당기 순이익) range. (unit : 100 million won)")
-                    det_a[9] = input("\nPlease enter the minimum value : ")
-                    det_b[9] = input("\nPlease enter the maximum value : ")
-                    if int(det_a[9]) >= int(det_b[9]):
-                        print("maximun value is less than minimum value, please enter valid input")
-                        continue;
-                    else:
-                        break;
-            elif detail_code == 11:
-                while True:
-                    print("\nPlease enter the Dividends(배당금) range. (unit : won)")
-                    det_a[10] = input("\nPlease enter the minimum value : ")
-                    det_b[10] = input("\nPlease enter the maximum value : ")
-                    if int(det_a[10]) >= int(det_b[10]):
-                        print("maximun value is less than minimum value, please enter valid input")
-                        continue;
-                    else:
-                        break;
-            elif detail_code == 12:
-                while True:
-                    print("\nPlease enter the Dividends_Rate Yield(배당 수익률) range. ")
-                    det_a[11] = input("\nPlease enter the minimum value : ")
-                    det_b[11] = input("\nPlease enter the maximum value : ")
-                    if float(det_a[11]) >= float(det_b[11]):
-                        print("maximun value is less than minimum value, please enter valid input")
-                        continue;
-                    else:
-                        break;
+    det.first()
+    det.make_filter()
 
-            # 추가 필터 사용할 것인지 묻기
-            detail_filter_check = input("\nDo you want to use another filter? (Y for Yes) : ")
-            if detail_filter_check == 'Y':
-                continue;
-            else:
-                break;
-        # 필터 입력 종료
-    else:
-        print("\nDetailed filter is not used.\n")
-    #세부 필터 종료
+    min = det.return_filter("min")
+    max = det.return_filter("max")
 
-
-    # 지금까지 입력확인
-    # print("\nperiod is %s\ttarget rate is %s\ttheme is %s\tcount is %s\tdetailed filter is %s\t" % (period, target_rate, theme_code,count, detail_filter))
-    # print(det_a)
-    # print(det_b)
-    table_name = "date_" + today
-    #mysql 연결
-    conn = pymysql.connect(host="localhost", user = 'root', password='Axenon!0927', db = 'daily_stock',charset = 'utf8') 
-    curs = conn.cursor(pymysql.cursors.DictCursor)
-
-    #mysql table filtering
-    if theme_exist == 'Y':
-        sql = "SELECT %s FROM " + table_name + " WHERE Theme = " + theme_code
-        if detail_filter == 'Y':
-            if int(det_a[0]) != 0 or int(det_b[0]) != 0 :
-                sql = sql + " AND 시가총액 BETWEEN '" + det_a[0] + "' AND '" + det_b[0] + "'"
-            elif int(det_a[1]) != 0 or int(det_b[1]) != 0 :
-                sql = sql + " AND PER BETWEEN '" + det_a[1] + "' AND '" + det_b[1] + "'"
-            elif int(det_a[2]) != 0 or int(det_b[2]) != 0 :
-                sql = sql + " AND EPS BETWEEN '" + det_a[2] + "' AND '" + det_b[2] + "'"
-            elif int(det_a[3]) != 0 or int(det_b[3]) != 0 :
-                sql = sql + " AND ROE BETWEEN '" + det_a[3] + "' AND '" + det_b[3] + "'"
-            elif int(det_a[4]) != 0 or int(det_b[4]) != 0 :
-                sql = sql + " AND PBR BETWEEN '" + det_a[4] + "' AND '" + det_b[4] + "'"
-            elif int(det_a[5]) != 0 or int(det_b[5]) != 0 :
-                sql = sql + " AND EV BETWEEN '" + det_a[5] + "' AND '" + det_b[5] + "'"
-            elif int(det_a[6]) != 0 or int(det_b[6]) != 0 :
-                sql = sql + " AND BPS BETWEEN '" + det_a[6] + "' AND '" + det_b[6] + "'"
-            elif int(det_a[7]) != 0 or int(det_b[7]) != 0 :
-                sql = sql + " AND 매출액 BETWEEN '" + det_a[7] + "' AND '" + det_b[7] + "'"
-            elif int(det_a[8]) != 0 or int(det_b[8]) != 0 :
-                sql = sql + " AND 영업이익 BETWEEN '" + det_a[8] + "' AND '" + det_b[8] + "'"
-            elif int(det_a[9]) != 0 or int(det_b[9]) != 0 :
-                sql = sql + " AND 당기순이익 BETWEEN '" + det_a[9] + "' AND '" + det_b[9] + "'"
-            elif int(det_a[10]) != 0 or int(det_b[10]) != 0 :
-                sql = sql + " AND Dividends BETWEEN '" + det_a[10] + "' AND '" + det_b[10] + "'"
-            elif float(det_a[11]) != 0 or float(det_b[11]) != 0 :
-                sql = sql + " AND Dividends_Rate BETWEEN '" + det_a[11] + "' AND '" + det_b[11] + "'"
-        filter_sql = sql % print_sql_part
-    else:
-        if detail_filter == 'Y':
-            sql = "SELECT %s FROM " + table_name + " WHERE "
-            if int(det_a[0]) != 0 or int(det_b[0]) != 0 :
-                sql = sql + "시가총액 BETWEEN '" + det_a[0] + "' AND '" + det_b[0] + "'"
-            elif int(det_a[1]) != 0 or int(det_b[1]) != 0 :
-                sql = sql + "PER BETWEEN '" + det_a[1] + "' AND '" + det_b[1] + "'"
-            elif int(det_a[2]) != 0 or int(det_b[2]) != 0 :
-                sql = sql + "EPS BETWEEN '" + det_a[2] + "' AND '" + det_b[2] + "'"
-            elif int(det_a[3]) != 0 or int(det_b[3]) != 0 :
-                sql = sql + "ROE BETWEEN '" + det_a[3] + "' AND '" + det_b[3] + "'"
-            elif int(det_a[4]) != 0 or int(det_b[4]) != 0 :
-                sql = sql + "PBR BETWEEN '" + det_a[4] + "' AND '" + det_b[4] + "'"
-            elif int(det_a[5]) != 0 or int(det_b[5]) != 0 :
-                sql = sql + "EV BETWEEN '" + det_a[5] + "' AND '" + det_b[5] + "'"
-            elif int(det_a[6]) != 0 or int(det_b[6]) != 0 :
-                sql = sql + "BPS BETWEEN '" + det_a[6] + "' AND '" + det_b[6] + "'"
-            elif int(det_a[7]) != 0 or int(det_b[7]) != 0 :
-                sql = sql + "매출액 BETWEEN '" + det_a[7] + "' AND '" + det_b[7] + "'"
-            elif int(det_a[8]) != 0 or int(det_b[8]) != 0 :
-                sql = sql + "영업이익 BETWEEN '" + det_a[8] + "' AND '" + det_b[8] + "'"
-            elif int(det_a[9]) != 0 or int(det_b[9]) != 0 :
-                sql = sql + "당기순이익 BETWEEN '" + det_a[9] + "' AND '" + det_b[9] + "'"
-            elif int(det_a[10]) != 0 or int(det_b[10]) != 0 :
-                sql = sql + "Dividends BETWEEN '" + det_a[10] + "' AND '" + det_b[10] + "'"
-            elif float(det_a[11]) != 0 or float(det_b[11]) != 0 :
-                sql = sql + "Dividends_Rate BETWEEN '" + det_a[11] + "' AND '" + det_b[11] + "'"
-        filter_sql = sql % print_sql_part
+    print(min)
+    print(max)
     
-    print(filter_sql)
+    # #mysql 연결
+    # conn = pymysql.connect(host="localhost", user = 'root', password='Axenon!0927', db = 'daily_stock',charset = 'utf8') 
+    # curs = conn.cursor(pymysql.cursors.DictCursor)
 
-    #정렬 결과 보기 while loop
-    sort_sql = ""
-    while True:
-        print("\n")
-        temp_sql = filter_sql + sort_sql
-        curs.execute(temp_sql)
-        rows = curs.fetchall()
-        # 정렬 한 결과 프린트
-        temp = count
-        for index, value in enumerate(rows, start = 1):
-            count = int(count) -1
-            if count < 0 :
-                break;
-            print(index, value)
-            print("\n")
-        count = temp
-        # 정렬 방식(시가총액, 매출액, 영업이익, 배당금, 배당수익률)
-        sort_check = input("Would you like to sort out the data? (Y for yes) : ")
-        if sort_check == 'Y':
-            print("\n1. 시가총액\t2. 매출액\t3. 영업이익\t4. 배당금\t5. 배당수익률\n")
-            sorting_type = input("By what criteria would you like to sort it out? (1 to 5) : ")
-            if sorting_type == '1':
-                sort_sql = "ORDER BY 시가총액 DESC"
-            elif sorting_type == '2':
-                sort_sql = "ORDER BY 매출액 DESC"
-            elif sorting_type == '3':
-                sort_sql = "ORDER BY 영업이익 DESC"
-            elif sorting_type == '4':
-                sort_sql = "ORDER BY Dividends DESC"        
-            elif sorting_type == '5':
-                sort_sql = "ORDER BY Dividends_Rate DESC"
-        else:
-            analyze = input("\nDo you want to start analyzing these stocks? (Y for Yes) : ")
-            if analyze == "Y":
-                print("\nAnalyzing these stocks...\n")
-                break;
-            else:
-                continue;
+    # #DB안에 있는 테이블 목록 보여주기
+    # #날짜 입력해서 그날 기준 가져오기
+    
+    # table_name = "date_" + today
+
+    # #mysql table filtering
+    # if theme_exist == 'Y':
+    #     sql = "SELECT %s FROM " + table_name + " WHERE Theme = " + theme_code
+    #     if det.check() == 'Y':
+    #         if int(min[0]) != 0 or int(max[0]) != 0 :
+    #             sql = sql + " AND 시가총액 BETWEEN '" + min[0] + "' AND '" + max[0] + "'"
+    #         elif int(min[1]) != 0 or int(max[1]) != 0 :
+    #             sql = sql + " AND PER BETWEEN '" + min[1] + "' AND '" + max[1] + "'"
+    #         elif int(min[2]) != 0 or int(max[2]) != 0 :
+    #             sql = sql + " AND EPS BETWEEN '" + min[2] + "' AND '" + max[2] + "'"
+    #         elif int(min[3]) != 0 or int(max[3]) != 0 :
+    #             sql = sql + " AND ROE BETWEEN '" + min[3] + "' AND '" + max[3] + "'"
+    #         elif int(min[4]) != 0 or int(max[4]) != 0 :
+    #             sql = sql + " AND PBR BETWEEN '" + min[4] + "' AND '" + max[4] + "'"
+    #         elif int(min[5]) != 0 or int(max[5]) != 0 :
+    #             sql = sql + " AND EV BETWEEN '" + min[5] + "' AND '" + max[5] + "'"
+    #         elif int(min[6]) != 0 or int(max[6]) != 0 :
+    #             sql = sql + " AND BPS BETWEEN '" + min[6] + "' AND '" + max[6] + "'"
+    #         elif int(min[7]) != 0 or int(max[7]) != 0 :
+    #             sql = sql + " AND 매출액 BETWEEN '" + min[7] + "' AND '" + max[7] + "'"
+    #         elif int(min[8]) != 0 or int(max[8]) != 0 :
+    #             sql = sql + " AND 영업이익 BETWEEN '" + min[8] + "' AND '" + max[8] + "'"
+    #         elif int(min[9]) != 0 or int(max[9]) != 0 :
+    #             sql = sql + " AND 당기순이익 BETWEEN '" + min[9] + "' AND '" + max[9] + "'"
+    #         elif int(min[10]) != 0 or int(max[10]) != 0 :
+    #             sql = sql + " AND Dividends BETWEEN '" + min[10] + "' AND '" + max[10] + "'"
+    #         elif float(min[11]) != 0 or float(max[11]) != 0 :
+    #             sql = sql + " AND Dividends_Rate BETWEEN '" + min[11] + "' AND '" + max[11] + "'"
+    #     filter_sql = sql % print_sql_part
+    # else:
+    #     if det.check() == 'Y':
+    #         sql = "SELECT %s FROM " + table_name + " WHERE "
+    #         if int(min[0]) != 0 or int(max[0]) != 0 :
+    #             sql = sql + "시가총액 BETWEEN '" + min[0] + "' AND '" + max[0] + "'"
+    #         elif int(min[1]) != 0 or int(max[1]) != 0 :
+    #             sql = sql + "PER BETWEEN '" + min[1] + "' AND '" + max[1] + "'"
+    #         elif int(min[2]) != 0 or int(max[2]) != 0 :
+    #             sql = sql + "EPS BETWEEN '" + min[2] + "' AND '" + max[2] + "'"
+    #         elif int(min[3]) != 0 or int(max[3]) != 0 :
+    #             sql = sql + "ROE BETWEEN '" + min[3] + "' AND '" + max[3] + "'"
+    #         elif int(min[4]) != 0 or int(max[4]) != 0 :
+    #             sql = sql + "PBR BETWEEN '" + min[4] + "' AND '" + max[4] + "'"
+    #         elif int(min[5]) != 0 or int(max[5]) != 0 :
+    #             sql = sql + "EV BETWEEN '" + min[5] + "' AND '" + max[5] + "'"
+    #         elif int(min[6]) != 0 or int(max[6]) != 0 :
+    #             sql = sql + "BPS BETWEEN '" + min[6] + "' AND '" + max[6] + "'"
+    #         elif int(min[7]) != 0 or int(max[7]) != 0 :
+    #             sql = sql + "매출액 BETWEEN '" + min[7] + "' AND '" + max[7] + "'"
+    #         elif int(min[8]) != 0 or int(max[8]) != 0 :
+    #             sql = sql + "영업이익 BETWEEN '" + min[8] + "' AND '" + max[8] + "'"
+    #         elif int(min[9]) != 0 or int(max[9]) != 0 :
+    #             sql = sql + "당기순이익 BETWEEN '" + min[9] + "' AND '" + max[9] + "'"
+    #         elif int(min[10]) != 0 or int(max[10]) != 0 :
+    #             sql = sql + "Dividends BETWEEN '" + min[10] + "' AND '" + max[10] + "'"
+    #         elif float(min[11]) != 0 or float(max[11]) != 0 :
+    #             sql = sql + "Dividends_Rate BETWEEN '" + min[11] + "' AND '" + max[11] + "'"
+    #     filter_sql = sql % print_sql_part
+    
+    # print(filter_sql)
+
+    # #정렬 결과 보기 while loop
+    # sort_sql = ""
+    # while True:
+    #     print("\n")
+    #     temp_sql = filter_sql + sort_sql
+    #     curs.execute(temp_sql)
+    #     rows = curs.fetchall()
+    #     # 정렬 한 결과 프린트
+    #     temp = count
+    #     for index, value in enumerate(rows, start = 1):
+    #         count = int(count) -1
+    #         if count < 0 :
+    #             break;
+    #         print(index, value)
+    #         print("\n")
+    #     count = temp
+    #     # 정렬 방식(시가총액, 매출액, 영업이익, 배당금, 배당수익률)
+    #     sort_check = input("Would you like to sort out the data? (Y for yes) : ")
+    #     if sort_check == 'Y':
+    #         print("\n1. 시가총액\t2. 매출액\t3. 영업이익\t4. 배당금\t5. 배당수익률\n")
+    #         sorting_type = input("By what criteria would you like to sort it out? (1 to 5) : ")
+    #         if sorting_type == '1':
+    #             sort_sql = "ORDER BY 시가총액 DESC"
+    #         elif sorting_type == '2':
+    #             sort_sql = "ORDER BY 매출액 DESC"
+    #         elif sorting_type == '3':
+    #             sort_sql = "ORDER BY 영업이익 DESC"
+    #         elif sorting_type == '4':
+    #             sort_sql = "ORDER BY Dividends DESC"        
+    #         elif sorting_type == '5':
+    #             sort_sql = "ORDER BY Dividends_Rate DESC"
+    #     else:
+    #         analyze = input("\nDo you want to start analyzing these stocks? (Y for Yes) : ")
+    #         if analyze == "Y":
+    #             print("\nAnalyzing these stocks...\n")
+    #             break;
+    #         else:
+    #             continue;
             
 
-    # sql에서 종목코드만 추출
-    code_list = []
-    name_list = []
-    filter_sql = sql % "종목코드, 종목명" + sort_sql 
-    # print(filter_sql)
-    curs.execute(filter_sql)
-    results = curs.fetchall()
-    temp = count
-    for index, value in enumerate(results, start = 1):
-        count = int(count) -1
-        if count < 0 :
-            break;
-        code_temp = str(value)
-        code_list.append(code_temp[10:16])
-        name_list.append(code_temp[27:-2])
-        print(index, value)
-    count = temp
-    # code list, name 추출 완료
+    # # sql에서 종목코드만 추출
+    # code_list = []
+    # name_list = []
+    # filter_sql = sql % "종목코드, 종목명" + sort_sql 
+    # # print(filter_sql)
+    # curs.execute(filter_sql)
+    # results = curs.fetchall()
+    # temp = count
+    # for index, value in enumerate(results, start = 1):
+    #     count = int(count) -1
+    #     if count < 0 :
+    #         break;
+    #     code_temp = str(value)
+    #     code_list.append(code_temp[10:16])
+    #     name_list.append(code_temp[27:-2])
+    #     print(index, value)
+    # count = temp
+    # # code list, name 추출 완료
 
-    # DB 닫기
-    conn.commit()
-    conn.close()
+    # # DB 닫기
+    # conn.commit()
+    # conn.close()
+
+    sql_filter = MySql_Filter.filter()
+    sql_filter.table_show()
+
+    #sql에서 검색하는 날짜 기준
+    sql_filter.setdate("20220118")
+
+    sql_filter.setdata(min, max, det.check(), count)
+
+    if theme_exist == 'Y':
+        sql_filter.getTheme(theme_exist, theme_code)
+    else:
+        sql_filter.getNoTheme(theme_exist)
+
+    sql_filter.filtering()
+    sql_filter.filtering_show()
+    
+    code_list = sql_filter.code_list
+    name_list = sql_filter.name_list
+
 
     print("\n")
     print(code_list)
@@ -476,7 +243,7 @@ while True:
 
     # code list to chart// Chart 생성 함수 클래스로 구현 완료
     for index, code in enumerate(code_list, start= 1):
-        today = "20220119"
+        today = "20220119" #sql 에서 가져오는 날짜의 기준
         inst = price_chart.graph()
         inst.setdata(code, today, name_list[index-1])
         inst.make_graph()

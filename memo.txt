@@ -1,0 +1,26 @@
+self.sql = "SELECT %s FROM " + table_name + " WHERE Theme = " + self.theme_code
+            if self.detail == 'Y':
+                if int(self.min[0]) != 0 or int(self.max[0]) != 0 :
+                    self.sql = self.sql + " AND 시가총액 BETWEEN '" + self.min[0] + "' AND '" + self.max[0] + "'"
+                elif int(self.min[1]) != 0 or int(self.max[1]) != 0 :
+                    self.sql = self.sql + " AND PER BETWEEN '" + self.min[1] + "' AND '" + self.max[1] + "'"
+                elif int(self.min[2]) != 0 or int(self.max[2]) != 0 :
+                    self.sql = self.sql + " AND EPS BETWEEN '" + self.min[2] + "' AND '" + self.max[2] + "'"
+                elif int(self.min[3]) != 0 or int(self.max[3]) != 0 :
+                    self.sql = self.sql + " AND ROE BETWEEN '" + self.min[3] + "' AND '" + self.max[3] + "'"
+                elif int(self.min[4]) != 0 or int(self.max[4]) != 0 :
+                    self.sql = self.sql + " AND PBR BETWEEN '" + self.min[4] + "' AND '" + self.max[4] + "'"
+                elif int(self.min[5]) != 0 or int(self.max[5]) != 0 :
+                    self.sql = self.sql + " AND EV BETWEEN '" + self.min[5] + "' AND '" + self.max[5] + "'"
+                elif int(self.min[6]) != 0 or int(self.max[6]) != 0 :
+                    self.sql = self.sql + " AND BPS BETWEEN '" + self.min[6] + "' AND '" + self.max[6] + "'"
+                elif int(self.min[7]) != 0 or int(self.max[7]) != 0 :
+                    self.sql = self.sql + " AND 매출액 BETWEEN '" + self.min[7] + "' AND '" + self.max[7] + "'"
+                elif int(self.min[8]) != 0 or int(self.max[8]) != 0 :
+                    self.sql = self.sql + " AND 영업이익 BETWEEN '" + self.min[8] + "' AND '" + self.max[8] + "'"
+                elif int(self.min[9]) != 0 or int(self.max[9]) != 0 :
+                    self.sql = self.sql + " AND 당기순이익 BETWEEN '" + self.min[9] + "' AND '" + self.max[9] + "'"
+                elif int(self.min[10]) != 0 or int(self.max[10]) != 0 :
+                    self.sql = self.sql + " AND Dividends BETWEEN '" + self.min[10] + "' AND '" + self.max[10] + "'"
+                elif float(self.min[11]) != 0 or float(self.max[11]) != 0 :
+                    self.sql = self.sql + " AND Dividends_Rate BETWEEN '" + self.min[11] + "' AND '" + self.max[11] + "'"

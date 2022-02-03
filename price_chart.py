@@ -40,7 +40,7 @@ class graph:
 
         #column name change
         thing.rename(columns= {'현재가':'Price'}, inplace=True)
-        print(thing)
+        # print(thing)
 
         plt.figure(num=self.name)
         plt.title(self.name + " 주가 차트", fontproperties=font)
@@ -48,9 +48,9 @@ class graph:
         plt.ylabel("현재가",fontproperties=font)
         ax = plt.gca()
 
-        print(thing)
+        # print(thing)
         thing.plot(kind='line', ax=ax, y = ['Price', 'MA5', 'MA10', 'MA20', 'MA60', 'MA120'], x = '일자')
-        os.chdir("C:/Users/User/Desktop/Study")
+        os.chdir("C:/Users/User/Desktop/Study/Test")
         plt.savefig(self.name + ".png")
 
 
