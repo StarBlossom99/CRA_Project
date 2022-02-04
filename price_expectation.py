@@ -1,13 +1,13 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from fbprophet import Prophet
+from prophet import Prophet
 # from statsmodels.tsa.arima_model import ARIMA
 # import statsmodels.api as sm
 
 data = pd.read_csv("C:/CRAproject/today_20220128/005930.csv", parse_dates=['일자'], dtype={'종목코드' : str}, header = 0, index_col=0, squeeze=True)
 data = data.fillna(0)
-data = data.loconc[:,['일자', '현재가']]
+data = data.loc[:,['일자', '현재가']]
 print(data)
 data.rename(columns= {'현재가':'y', '일자':'ds'}, inplace=True)
 # data.set_index('day', inplace=True)

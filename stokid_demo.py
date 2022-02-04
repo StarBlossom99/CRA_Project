@@ -33,7 +33,7 @@ if data_load_check == 'Y':
     exit_check = input("End the program after downloading? (Y for Yes) : ")
     data = DataLoad.dataload()
     data.setdata()
-    data.settoday("20220128")
+    data.settoday("20220203")
     data.download()
     if exit_check == "Y":
         exit()
@@ -243,7 +243,7 @@ while True:
 
     # code list to chart// Chart 생성 함수 클래스로 구현 완료
     for index, code in enumerate(code_list, start= 1):
-        today = "20220119" #sql 에서 가져오는 날짜의 기준
+        today = "20220203" #sql 에서 가져오는 날짜의 기준
         inst = price_chart.graph()
         inst.setdata(code, today, name_list[index-1])
         inst.make_graph()
