@@ -20,7 +20,7 @@ class graph:
         font = fm.FontProperties(fname=fontpath, size=15)
 
         file_path = "C:/CRAproject/today_" + self.date + "/" + self.code + ".csv"
-        print(file_path)
+        # print(file_path)
         thing = pd.read_csv(file_path, parse_dates=['일자'], dtype={'종목코드' : str})
         thing = thing.fillna(0)
         thing = thing[::-1]
