@@ -54,7 +54,3 @@ class Rt_expect:
             return_list.append(return_temp)
 
         self.return_list = return_list
-
-print("\033[32m" + "hello\n" + "\033[0m")
-print("\033[31m" + "hello\n" + "\033[0m")
-print("hello")
