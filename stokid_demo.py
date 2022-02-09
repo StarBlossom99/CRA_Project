@@ -4,11 +4,13 @@ import pymysql
 import os
 import datetime
 import time
-import price_chart
 import DataLoad
 import DetailFilter
 import MySql_Filter
 import Return_Expect
+# import price_chart
+import stock_data
+import pdf
 from pykiwoom.kiwoom import *
 
 theme_code_list = ['141', '140','571','570','830','501','562','561','560','572','600','500','458','452','353','250','170','202','319','201','200','471','470','312','270','245','160','210','211','480','610','316','213','456','517','281','280','130','360','363','361','362','550','551','557','556',
@@ -105,21 +107,29 @@ while True:
     # print(name_list)
 
     # code list to chart// Chart 생성 함수 클래스로 구현 완료
-    for index, code in enumerate(code_list, start= 1):
-        today = "20220203" #sql 에서 가져오는 날짜의 기준
-        inst = price_chart.graph()
-        inst.setdata(code, today, name_list[index-1])
-        inst.make_graph()
+    # for index, code in enumerate(code_list, start= 1):
+    #     today = "20220203" #sql 에서 가져오는 날짜의 기준
+    #     inst = price_chart.graph()
+    #     inst.setdata(code, today, name_list[index-1])
+    #     inst.make_graph()
+    today = "20220203"
+    stock_analysis = stock_data.stock_data()
+    stock_analysis.setdata(code_list, name_list, today)
+    stock_analysis.make_price_chart()
 
-    print("The stock price chart of the selected stocks has been created.\n\n")
-
-    print("<Expected Return Rate on the selected stocks>\n\n")
     # 기대 수익률 계산 후 출력
     return_expected = Return_Expect.Rt_expect()
     return_expected.setdata(interest_rate, today, code_list, float(target_rate))
     return_expected.make_return_expect()
     return_expected.make_return_list()
     return_expected.print_result()
+
+    expect_profit = return_expected.get_return_list()
+    stocks = stock_analysis.get_stock_data()
+
+    pdf_object = pdf.PDF()
+    pdf_object.setdata(stocks, target_rate, expect_profit)
+    pdf_object.make_pdf()
 
     break;
 
