@@ -13,6 +13,11 @@ class PDF(FPDF):
         self.target_rate = target_rate
         self.expect_rate = expect_rate
 
+    def data_print(self):
+        for data in self.stock_data:
+            print(data)
+            print("\n")
+
     def header(self):
         self.image('C:/Users/User/Desktop/CRA_image.jpg', 10, 8, 15)
         self.set_font('Arial', 'B', 14)

@@ -129,6 +129,7 @@ while True:
 
     pdf_object = pdf.PDF()
     pdf_object.setdata(stocks, target_rate, expect_profit)
+    pdf_object.data_print()
     pdf_object.make_pdf()
 
     break;
