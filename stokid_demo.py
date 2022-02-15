@@ -4,12 +4,12 @@ import pymysql
 import os
 import datetime
 import time
-import DataLoad
-import DetailFilter
+import Data_Load
+import Detail_Filter
 import MySql_Filter
-import Return_Expect
+import Price_Expect
 # import price_chart
-import stock_data
+import Stock_Data
 import pdf
 from pykiwoom.kiwoom import *
 
@@ -31,7 +31,7 @@ data_load_check = input("Do you want to load new data? (Y for Yes) : ")
 if data_load_check == 'Y':
     # Data 다운끝나면 프로그램 종료할지
     exit_check = input("End the program after downloading? (Y for Yes) : ")
-    data = DataLoad.dataload()
+    data = Data_Load.dataload()
     data.setdata()
     data.settoday("20220203")
     data.download()
@@ -74,7 +74,7 @@ while True:
             print("\nplease input valid input (1 to 15)")
             continue;
     
-    det = DetailFilter.filter()
+    det = Detail_Filter.filter()
 
     det.first()
     det.make_filter()
@@ -113,12 +113,12 @@ while True:
     #     inst.setdata(code, today, name_list[index-1])
     #     inst.make_graph()
     today = "20220203"
-    stock_analysis = stock_data.stock_data()
+    stock_analysis = Stock_Data.stock_data()
     stock_analysis.setdata(code_list, name_list, today)
     stock_analysis.make_price_chart()
 
     # 기대 수익률 계산 후 출력
-    return_expected = Return_Expect.Rt_expect()
+    return_expected = Price_Expect.Rt_expect()
     return_expected.setdata(interest_rate, today, code_list, float(target_rate))
     return_expected.make_return_expect()
     return_expected.make_return_list()

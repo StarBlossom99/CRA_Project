@@ -1,5 +1,8 @@
+#-*-coding: utf-8-*-
 import os
 from fpdf import FPDF
+import datetime
+from time import localtime, strftime
 
 
 class PDF(FPDF):
@@ -32,23 +35,33 @@ class PDF(FPDF):
         self.set_text_color(128)
         self.cell(0, 10, 'Page' + str(self.page_no()), 0, 0, 'C')
 
-    def page_body(self, image):
-        self.image(image, 0, 25, self.WIDTH)
+    def page_body(self, image, data):
+        self.image(image, 0, 20, self.WIDTH)
+        self.set_font('Arial', 'B', 10)
+
+        start = 170
+        for element in data:
+            self.text(30, start, element)
+            start += 7
             
-    def print_page(self, images):
+    def print_page(self, images, data):
         # Generates the report
         self.add_page()
-        self.page_body(images)
+        self.page_body(images, data)
 
     def make_pdf(self):
-        PLOT_DIR = "C:/Users/User/Desktop/Study/Test"
+        PLOT_DIR = "C:/Users/User/Desktop/Study/Test/"
         os.chdir(PLOT_DIR)
         files = os.listdir(PLOT_DIR)
         print(files)
 
+        for i in range(0, len(files)):
+            for j in range(0, len(files)):
+                if datetime.datetime.fromtimestamp(os.path.getmtime(PLOT_DIR + files[i])) < datetime.datetime.fromtimestamp(os.path.getmtime(PLOT_DIR+files[j])):
+                    (files[i], files[j]) = (files[j], files[i])
 
-        for element in files:
-            self.print_page(element)
+        for element, data in zip(files, self.stock_data):
+            self.print_page(element, data)
 
         self.output('Stock_Analysis_Report.pdf', 'F')
         print("PDF is made")

@@ -1,7 +1,7 @@
 import pandas as pd
 import pymysql
 import os
-import price_chart
+import Price_Chart
 
 class stock_data():
     def setdata(self, code_list, name_list, date):
@@ -22,17 +22,17 @@ class stock_data():
 
             curs.execute("select 종목코드 from " + table + " where 종목코드=" + code)
             result = curs.fetchone()
-            temp = "종목코드 : " + str(result)[10:-2]
-            data_text.append(temp)
-
-            curs.execute("select 종목명 from " + table + " where 종목코드=" + code)
-            result = curs.fetchone()
-            temp = "종목명 : " + str(result)[9:-2]
+            temp = "Stock Code : " + str(result)[10:-2]
             data_text.append(temp)
 
             curs.execute("select 연중최고 from " + table + " where 종목코드=" + code)
             result = curs.fetchone()
-            temp = "연중최고 : " + str(result)[9:-1] + "원"
+            temp = "Highest of Year : " + str(result)[9:-1] + " won"
+            data_text.append(temp)
+
+            curs.execute("select 연중최저 from " + table + " where 종목코드=" + code)
+            result = curs.fetchone()
+            temp = "Lowest of Year : " + str(result)[9:-1] + " won"
             data_text.append(temp)
 
             curs.execute("select 시가총액 from " + table + " where 종목코드=" + code)
@@ -40,11 +40,15 @@ class stock_data():
             if int(str(result)[9:-1]) > 9999:
                 div = int(str(result)[9:-1]) // 10000
                 res = int(str(result)[9:-1]) % 10000
-                temp = "시가총액 : " + str(div) + "조 " + str(res) + "억원"
+                temp = "Market Cap : " + str(div) + "." + str(res) + " trillion won"
+                data_text.append(temp)
+            elif int(str(result)[9:-1]) > 9:
+                div = int(str(result)[9:-1]) // 10
+                res = int(str(result)[9:-1]) % 10
+                temp = "Market Cap : " + str(div) + "." + str(res) + " billion won"
                 data_text.append(temp)
             else:
-                res = int(str(result)[9:-1]) % 10000
-                temp = "시가총액 : " + str(res) + "억원"
+                temp = "Market Cap : " + str(div) + "00" + str(res) + " billion won"
                 data_text.append(temp)
 
             curs.execute("select PER from " + table + " where 종목코드=" + code)
@@ -82,11 +86,15 @@ class stock_data():
             if int(str(result)[8:-1]) > 9999:
                 div = int(str(result)[8:-1]) // 10000
                 res = int(str(result)[8:-1]) % 10000
-                temp = "매출액 : " + str(div) + "조 " + str(res) + "억원"
+                temp = "Sales : " + str(div) + "." + str(res) + " trillion won"
+                data_text.append(temp)
+            elif int(str(result)[8:-1]) > 9:
+                div = int(str(result)[8:-1]) // 10
+                res = int(str(result)[8:-1]) % 10
+                temp = "Sales : " + str(div) + "." + str(res) + " billion won"
                 data_text.append(temp)
             else:
-                res = int(str(result)[8:-1]) % 10000
-                temp = "매출액 : " + str(res) + "억원"
+                temp = "Sales : " + str(div) + "00" + str(res) + " billion won"
                 data_text.append(temp)
 
             curs.execute("select 영업이익 from " + table + " where 종목코드=" + code)
@@ -94,11 +102,15 @@ class stock_data():
             if int(str(result)[9:-1]) > 9999:
                 div = int(str(result)[9:-1]) // 10000
                 res = int(str(result)[9:-1]) % 10000
-                temp = "영업이익 : " + str(div) + "조 " + str(res) + "억원"
+                temp = "Operating Profit : " + str(div) + "." + str(res) + " trillion won"
+                data_text.append(temp)
+            elif int(str(result)[9:-1]) > 9:
+                div = int(str(result)[9:-1]) // 10
+                res = int(str(result)[9:-1]) % 10
+                temp = "Operating Profit : " + str(div) + "." + str(res) + " billion won"
                 data_text.append(temp)
             else:
-                res = int(str(result)[9:-1]) % 10000
-                temp = "영업이익 : " + str(res) + "억원"
+                temp = "Operating Profit : " + str(div) + "00" + str(res) + " billion won"
                 data_text.append(temp)
 
             curs.execute("select 당기순이익 from " + table + " where 종목코드=" + code)
@@ -106,26 +118,30 @@ class stock_data():
             if int(str(result)[10:-1]) > 9999:
                 div = int(str(result)[10:-1]) // 10000
                 res = int(str(result)[10:-1]) % 10000
-                temp = "당기순이익 : " + str(div) + "조 " + str(res) + "억원"
+                temp = "Net Profit : " + str(div) + "." + str(res) + " trillion won"
+                data_text.append(temp)
+            elif int(str(result)[10:-1]) > 9:
+                div = int(str(result)[10:-1]) // 10
+                res = int(str(result)[10:-1]) % 10
+                temp = "Net Profit : " + str(div) + "." + str(res) + " billion won"
                 data_text.append(temp)
             else:
-                res = int(str(result)[10:-1]) % 10000
-                temp = "당기순이익 : " + str(res) + "억원"
+                temp = "Net Profit : " + str(div) + "00" + str(res) + " billion won"
                 data_text.append(temp)
 
             curs.execute("select 현재가 from " + table + " where 종목코드=" + code)
             result = curs.fetchone()
-            temp = "현재가 : " + str(result)[7:-1] + "원"
+            temp = "Price : " + str(result)[7:-1] + " won"
             data_text.append(temp)
 
             curs.execute("select Dividends from " + table + " where 종목코드=" + code)
             result = curs.fetchone()
-            temp = "배당금 : " + str(result)[13:-1] + "원"
+            temp = "Dividends : " + str(result)[13:-1] + " won"
             data_text.append(temp)
 
             curs.execute("select Dividends_Rate from " + table + " where 종목코드=" + code)
             result = curs.fetchone()
-            temp = "배당률 : " + str(round(float(str(result)[18:-1]), 3) * 100) + "%"
+            temp = "Dividend Rate : " + str(round(float(str(result)[18:-1]), 3) * 100) + " %"
             data_text.append(temp)
 
             data.append(data_text)
@@ -149,7 +165,7 @@ class stock_data():
             os.remove(file.path)
 
         for index, code in enumerate(self.code_list, start= 1):
-            inst = price_chart.graph()
+            inst = Price_Chart.graph()
             inst.setdata(code, self.date, self.name_list[index-1])
             inst.make_graph()
         print("The stock price chart of the selected stocks has been created.\n\n")
