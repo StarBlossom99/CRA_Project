@@ -2,6 +2,7 @@
 import os
 from fpdf import FPDF
 import datetime
+import Price_Expect
 from time import localtime, strftime
 
 
@@ -35,7 +36,7 @@ class PDF(FPDF):
         self.set_text_color(128)
         self.cell(0, 10, 'Page' + str(self.page_no()), 0, 0, 'C')
 
-    def page_body(self, image, data):
+    def page_body(self, image, data, profit):
         self.image(image, 0, 20, self.WIDTH)
         self.set_font('Arial', 'B', 10)
 
@@ -43,13 +44,28 @@ class PDF(FPDF):
         for element in data:
             self.text(30, start, element)
             start += 7
+
+
+        self.set_font('Arial', 'B', 12)
+
+        self.text(135, 170, "Target rate of return : " + str(self.target_rate) + "%")
+        self.text(135, 177, "Expected rate of return : " + str(round(profit,2)) + "%")
+
+        if float(self.target_rate) <= round(profit,2) :
+            self.set_text_color(71,200,62)
+            self.text(135, 185, "Suitablilty : GOOD")
+        else:
+            self.set_text_color(255,0,0)
+            self.text(135, 185, "Suitablilty : BAD")
+
+        self.set_text_color(0,0,0)
             
-    def print_page(self, images, data):
+    def print_page(self, images, data, profit):
         # Generates the report
         self.add_page()
-        self.page_body(images, data)
+        self.page_body(images, data, profit)
 
-    def make_pdf(self):
+    def make_pdf(self, profit_list):
         PLOT_DIR = "C:/Users/User/Desktop/Study/Test/"
         os.chdir(PLOT_DIR)
         files = os.listdir(PLOT_DIR)
@@ -60,11 +76,14 @@ class PDF(FPDF):
                 if datetime.datetime.fromtimestamp(os.path.getmtime(PLOT_DIR + files[i])) < datetime.datetime.fromtimestamp(os.path.getmtime(PLOT_DIR+files[j])):
                     (files[i], files[j]) = (files[j], files[i])
 
-        for element, data in zip(files, self.stock_data):
-            self.print_page(element, data)
+        for element, data, profit in zip(files, self.stock_data, profit_list):
+            self.print_page(element, data, profit)
 
         self.output('Stock_Analysis_Report.pdf', 'F')
         print("PDF is made")
+
+
+
 
 
 

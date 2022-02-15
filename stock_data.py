@@ -152,10 +152,10 @@ class stock_data():
 
         self.data = data
 
-        for element in self.data:
-            for line in element:
-                print(line)
-            print("\n\n")   
+        # for element in self.data:
+        #     for line in element:
+        #         print(line)
+        #     print("\n\n")   
 
         return self.data
 

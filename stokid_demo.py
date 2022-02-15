@@ -10,7 +10,7 @@ import MySql_Filter
 import Price_Expect
 # import price_chart
 import Stock_Data
-import pdf
+import PDF
 from pykiwoom.kiwoom import *
 
 theme_code_list = ['141', '140','571','570','830','501','562','561','560','572','600','500','458','452','353','250','170','202','319','201','200','471','470','312','270','245','160','210','211','480','610','316','213','456','517','281','280','130','360','363','361','362','550','551','557','556',
@@ -126,11 +126,10 @@ while True:
 
     expect_profit = return_expected.get_return_list()
     stocks = stock_analysis.get_stock_data()
-
-    pdf_object = pdf.PDF()
+    pdf_object = PDF.PDF()
     pdf_object.setdata(stocks, target_rate, expect_profit)
-    pdf_object.data_print()
-    pdf_object.make_pdf()
+
+    pdf_object.make_pdf(return_expected.get_profit_list())
 
     break;
 

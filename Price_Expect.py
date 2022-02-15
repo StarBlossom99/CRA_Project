@@ -43,7 +43,7 @@ class Rt_expect:
 
     def make_return_list(self):
         return_list = []
-
+        profit_list = []
         print("<Expected Return Rate on the selected stocks>\n\n")
         for value, name, code in zip(self.per_list, self.name_list, self.code_list):
             per = float(value)
@@ -57,8 +57,13 @@ class Rt_expect:
             else:
                 return_temp = "\033[0m" + name + "\n종목코드 : " + code + "\n기대 수익률 : " + str(round(expect,2)) + "%\n"
             return_list.append(return_temp)
+            profit_list.append(expect)
 
         self.return_list = return_list
+        self.profit_list = profit_list
 
     def get_return_list(self):
         return self.return_list
+    
+    def get_profit_list(self):
+        return self.profit_list
